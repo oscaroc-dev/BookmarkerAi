@@ -4,9 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookmarker AI</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { padding: 10px 15px; }
+        #response { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #e0fde0; border: 1px solid #00c800; }
+        .error { background-color: #fde0e0; border: 1px solid #c80000; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to Bookmarker AI</h1>
-    <p>We are building this app together!</p>
+    <h1>Bookmarker AI</h1>
+    <p>Enter a URL to save and summarize.</p>
+
+    <form id="bookmark-form">
+        <input type="url" id="url-input" placeholder="https://example.com" required>
+        <button type="submit">Add Bookmark</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // IMPORTANT: Replace these with your actual Supabase URL and Anon Key
+        const SUPABASE_URL = 'https://oueudtnhymgughoekmux.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZXVkdG5oeW1ndWdob2VrbXV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMTE4MzIsImV4cCI6MjA3ODg4NzgzMn0.ISMASpC89wfl5vzepKLummQZLlm99k40uFD71vwgD4w'; // <-- PASTE YOUR KEY HERE
+        
+        const form = document.getElementById('bookmark-form');
+        const urlInput = document.getElementById('url-input');
+        const responseDiv = document.getElementById('response');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent the form from reloading the page
+            
+            const url = urlInput.value;
+            responseDiv.innerHTML = 'Saving...';
+            responseDiv.className = '';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/add-bookmark`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP error! status: ${response.status}`);
+                }
+
+                responseDiv.innerHTML = `Successfully bookmarked: <a href="${result.bookmark.url}" target="_blank">${result.bookmark.title}</a>`;
+                responseDiv.className = 'success';
+                form.reset(); // Clear the input field
+
+            } catch (error) {
+                responseDiv.innerHTML = `Error: ${error.message}`;
+                responseDiv.className = 'error';
+                console.error('Error adding bookmark:', error);
+            }
+        });
+    </script>
 </body>
 </html>
